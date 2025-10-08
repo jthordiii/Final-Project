@@ -75,15 +75,25 @@ class MainWindow(QWidget):
         self.welcome_page = FadeWidget(self.create_welcome_page(), self)
         self.ask_page = FadeWidget(self.create_ask_page(), self)
         self.main_page = FadeWidget(self.create_main_page(), self)
+        
+        self.tutorial_page = FadeWidget(self.create_tutorial_page(), self)
+        self.current_tutorial_step = 0  # track which tutorial slide we're on
+
+        self.welcome_back_page = FadeWidget(QLabel(alignment=Qt.AlignmentFlag.AlignCenter), self)
+        self.welcome_back_page.widget.setFont(FONT_MEDIUM)
 
         for page in [self.start_page, self.name_page, self.greet_page, self.welcome_page, self.ask_page, self.main_page]:
             self.stacked.addWidget(page)
+            
+        self.stacked.addWidget(self.tutorial_page)
+        self.stacked.addWidget(self.welcome_back_page)
 
         # Connections
         self.start_btn.clicked.connect(lambda: self.start_page.fade_out(self.name_page))
         self.submit_name_btn.clicked.connect(self.show_greet)
-        self.yes_btn.clicked.connect(lambda: self.ask_page.fade_out(self.main_page))
-        self.no_btn.clicked.connect(lambda: self.ask_page.fade_out(self.main_page))
+        
+        self.yes_btn.clicked.connect(self.show_tutorial)
+        self.no_btn.clicked.connect(self.show_welcome_back)
 
         # Start page
         self.stacked.setCurrentWidget(self.start_page)
@@ -183,6 +193,93 @@ class MainWindow(QWidget):
         layout.addWidget(self.no_btn, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addStretch()
         return widget
+    
+    def create_tutorial_page(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(20)
+    
+        self.tutorial_title = QLabel()
+        self.tutorial_title.setFont(FONT_LARGE_BOLD)
+        self.tutorial_title.setStyleSheet("color: #434190; font-weight: bold;")
+        self.tutorial_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    
+        self.tutorial_desc = QLabel()
+        self.tutorial_desc.setFont(FONT_LABEL)
+        self.tutorial_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.tutorial_desc.setWordWrap(True)
+        self.tutorial_desc.setStyleSheet("color: #555;")
+    
+        self.next_btn = QPushButton("Next ➜")
+        self.next_btn.setFont(FONT_BUTTON)
+        self.next_btn.clicked.connect(self.next_tutorial_step)
+        
+        self.skip_btn = QPushButton("Skip Tutorial ⏭️")
+        self.skip_btn.setFont(FONT_BUTTON)
+        self.skip_btn.clicked.connect(lambda: self.tutorial_page.fade_out(self.main_page))
+        
+        self.tutorial_desc.setStyleSheet("color: #555; padding: 0 40px;")
+        
+        layout.addStretch()
+        layout.addWidget(self.tutorial_title)
+        layout.addWidget(self.tutorial_desc)
+        layout.addSpacing(20)
+        layout.addWidget(self.next_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.skip_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addStretch()
+    
+        return widget
+
+    def show_tutorial(self):
+        self.current_tutorial_step = 0
+        self.ask_page.fade_out(self.tutorial_page)
+        self.update_tutorial_step()
+        
+    def update_tutorial_step(self):
+        """Update tutorial content based on current step"""
+        steps = [
+            {
+                "title": "Adding Flashcards",
+                "desc": "Click the '+' button or 'Add Flashcard' in the main screen to create a new flashcard.\nYou can enter a question, an answer, and save it instantly."
+            },
+            {
+                "title": "Navigating the App",
+                "desc": "Use the sidebar ☰ to explore:\n🏠 Home – View your flashcards\n👤 Profile – Check your info\n⚙️ Settings – Customize your theme\n📊 Statistics – See your study progress."
+            },
+            {
+                "title": "Using Existing Flashcards",
+                "desc": "Select any flashcard to study. Flip the card to see the answer and mark if you got it right or wrong. Remora tracks your progress automatically!"
+            }
+        ]
+    
+        # Update content
+        step = steps[self.current_tutorial_step]
+        self.tutorial_title.setText(step["title"])
+        self.tutorial_desc.setText(step["desc"])
+    
+        # Update button text
+        if self.current_tutorial_step < len(steps) - 1:
+            self.next_btn.setText("Next ➜")
+        else:
+            self.next_btn.setText("Finish ✅")
+
+    def next_tutorial_step(self):
+        """Handle next step or finish tutorial"""
+        self.current_tutorial_step += 1
+        if self.current_tutorial_step < 3:
+            self.update_tutorial_step()
+        else:
+            # End tutorial and go to main page
+            self.tutorial_page.fade_out(self.main_page)
+
+    def show_welcome_back(self):
+        """Show personalized welcome back message before main content"""
+        name = self.data.username or "User"
+        self.welcome_back_page.widget.setText(f"Welcome back, {name}!")
+        self.welcome_back_page.widget.setStyleSheet("color: #434190; font-weight: bold;")
+        self.ask_page.fade_out(self.welcome_back_page)
+        QTimer.singleShot(2000, lambda: self.welcome_back_page.fade_out(self.main_page))
 
     def create_main_page(self):
         page = QWidget()
@@ -230,7 +327,7 @@ class MainWindow(QWidget):
         self.greet_page.widget.setText(f"Hi, {name}!")
         self.greet_page.widget.setStyleSheet("color: #434190")
         self.name_page.fade_out(self.greet_page)
-        QTimer.singleShot(3000, lambda: self.show_welcome())
+        QTimer.singleShot(2000, lambda: self.show_welcome())
 
     def create_welcome_page(self):
         widget = QWidget()
@@ -265,7 +362,7 @@ class MainWindow(QWidget):
     
     def show_welcome(self):
         self.greet_page.fade_out(self.welcome_page)
-        QTimer.singleShot(3000, lambda: self.welcome_page.fade_out(self.ask_page))
+        QTimer.singleShot(2000, lambda: self.welcome_page.fade_out(self.ask_page))
 
     def toggle_sidebar(self):
         current_width = self.sidebar.maximumWidth()
