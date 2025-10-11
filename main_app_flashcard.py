@@ -361,12 +361,15 @@ class MainWindow(QWidget):
         self.existing_flashcard.clicked.connect(self.toggle_existing_flashcard)
         
     
-        
-            
         self.create_flashcard = QPushButton("Create Flashcard")
         self.create_flashcard.setFont(FONT_LARGE_BOLD)
         self.create_flashcard.setStyleSheet(CREATE_FLASH)
         self.create_flashcard.clicked.connect(self.toggle_create_flashcard)
+        
+        self.saved_flashcard_btn = QPushButton("Saved Flashcards")
+        self.saved_flashcard_btn.setFont(FONT_LARGE_BOLD)
+        self.saved_flashcard_btn.setStyleSheet(CREATE_FLASH)
+        self.saved_flashcard_btn.clicked.connect(self.show_saved_flashcards)
 
         self.hamburger = QPushButton("☰")
         self.hamburger.setStyleSheet(HAMBURGER_STYLE)
@@ -382,6 +385,11 @@ class MainWindow(QWidget):
         content_layout.addWidget(self.existing_flashcard, alignment=Qt.AlignmentFlag.AlignCenter)
         content_layout.addWidget(self.create_flashcard, alignment=Qt.AlignmentFlag.AlignCenter)
         content_layout.addStretch()
+        
+        content_layout.addWidget(self.existing_flashcard, alignment=Qt.AlignmentFlag.AlignCenter)
+        content_layout.addWidget(self.create_flashcard, alignment=Qt.AlignmentFlag.AlignCenter)
+        content_layout.addWidget(self.saved_flashcard_btn, alignment=Qt.AlignmentFlag.AlignCenter)  # <--- ADD THIS
+
 
         layout.addWidget(self.sidebar)
         layout.addLayout(content_layout)
@@ -673,3 +681,184 @@ class MainWindow(QWidget):
 
         self.topics_page.fade_out(self.topic_pages[topic_name])
     
+      # ========== CREATE FLASHCARD PAGE ==========
+    def create_create_flashcard_page(self):
+        """Page for creating a new flashcard."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(15)
+
+        title = QLabel("Create Flashcard")
+        title.setFont(QFont("Arial Rounded MT Bold", 28))
+        title.setStyleSheet("color: #434190;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.q_input = QLineEdit()
+        self.q_input.setPlaceholderText("Enter question here...")
+        self.q_input.setFont(QFont("Arial", 14))
+        self.q_input.setFixedWidth(400)
+        self.q_input.setStyleSheet("padding: 8px; border-radius: 10px; border: 2px solid #888;")
+
+        self.a_input = QLineEdit()
+        self.a_input.setPlaceholderText("Enter answer here...")
+        self.a_input.setFont(QFont("Arial", 14))
+        self.a_input.setFixedWidth(400)
+        self.a_input.setStyleSheet("padding: 8px; border-radius: 10px; border: 2px solid #888;")
+
+        save_btn = QPushButton("💾 Save Flashcard")
+        save_btn.setFont(QFont("Arial Rounded MT Bold", 14))
+        save_btn.setStyleSheet("background-color: #4CAF50; color: white; padding: 8px 20px; border-radius: 10px;")
+        save_btn.clicked.connect(self.save_flashcard)
+
+        back_btn = QPushButton("⬅ Back to Main")
+        back_btn.setFont(QFont("Arial Rounded MT Bold", 14))
+        back_btn.setStyleSheet("background-color: #888; color: white; padding: 8px 20px; border-radius: 10px;")
+        back_btn.clicked.connect(lambda: self.create_flashcard_page.fade_out(self.main_page))
+
+        layout.addStretch()
+        layout.addWidget(title)
+        layout.addSpacing(15)
+        layout.addWidget(self.q_input, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.a_input, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addSpacing(15)
+        layout.addWidget(save_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(back_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addStretch()
+
+        widget.setStyleSheet("background-color: #FFF6E9;")
+        return widget
+    
+    def setup_create_flashcard_page(self):
+        """Initialize and add the Create Flashcard page to stacked widget."""
+        self.create_flashcard_page = FadeWidget(self.create_create_flashcard_page(), self)
+        self.stacked.addWidget(self.create_flashcard_page)
+
+    def toggle_create_flashcard(self):
+        """Show the Create Flashcard page when button is clicked."""
+        if not hasattr(self, "create_flashcard_page"):
+            self.setup_create_flashcard_page()
+        self.main_page.fade_out(self.create_flashcard_page)
+
+    def save_flashcard(self):
+        """Save the flashcard temporarily."""
+        question = self.q_input.text().strip()
+        answer = self.a_input.text().strip()
+
+        if not question or not answer:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Incomplete Flashcard")
+            msg.setText("Please fill out both the question and the answer before saving.")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.setStyleSheet(MESSAGE_WARNING)
+            msg.exec()
+            return
+
+        # Save to AppData (you can modify this later to save per topic)
+        if not hasattr(self.data, "custom_flashcards"):
+            self.data.custom_flashcards = []
+
+        self.data.custom_flashcards.append((question, answer))
+
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setWindowTitle("Saved!")
+        msg.setText("Flashcard saved successfully ✅")
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
+
+        # Clear inputs for next entry
+        self.q_input.clear()
+        self.a_input.clear()
+
+    # ========== SAVED FLASHCARDS REVIEW PAGE ==========
+    def create_saved_flashcards_page(self):
+        """Display saved flashcards created by the user."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(20)
+
+        title = QLabel("Your Saved Flashcards")
+        title.setFont(QFont("Arial Rounded MT Bold", 28))
+        title.setStyleSheet("color: #434190;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.saved_flashcards_container = QHBoxLayout()
+        self.saved_flashcards_container.setSpacing(30)
+        self.saved_flashcards_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Back button
+        back_btn = QPushButton("⬅ Back to Main")
+        back_btn.setFont(QFont("Arial Rounded MT Bold", 14))
+        back_btn.setStyleSheet("background-color: #888; color: white; padding: 8px 20px; border-radius: 10px;")
+        back_btn.clicked.connect(lambda: self.saved_flashcards_page.fade_out(self.main_page))
+
+        layout.addWidget(title)
+        layout.addLayout(self.saved_flashcards_container)
+        layout.addSpacing(30)
+        layout.addWidget(back_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        widget.setStyleSheet("background-color: #FFF6E9;")
+        return widget
+
+
+    def setup_saved_flashcards_page(self):
+        """Initialize the saved flashcards review page."""
+        self.saved_flashcards_page = FadeWidget(self.create_saved_flashcards_page(), self)
+        self.stacked.addWidget(self.saved_flashcards_page)
+
+    def show_saved_flashcards(self):
+        """Display user-saved flashcards as FlipCards."""
+        # Create the page if it doesn’t exist yet
+        if not hasattr(self, "saved_flashcards_page"):
+            self.setup_saved_flashcards_page()
+
+        # Clear previous cards (to refresh)
+        for i in reversed(range(self.saved_flashcards_container.count())):
+            widget_item = self.saved_flashcards_container.itemAt(i).widget()
+            if widget_item:
+                widget_item.setParent(None)
+
+        # Check if there are saved flashcards
+        if not hasattr(self.data, "custom_flashcards") or not self.data.custom_flashcards:
+            no_card_label = QLabel("No saved flashcards yet! Create some first. 📚")
+            no_card_label.setFont(QFont("Arial", 14))
+            no_card_label.setStyleSheet("color: #777;")
+            no_card_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.saved_flashcards_container.addWidget(no_card_label)
+        else:
+            # Create FlipCards for each saved flashcard
+            for q, a in self.data.custom_flashcards:
+                card = FlipCard(q, a, bg_color="#FFFFFF", text_color="#333")
+                self.saved_flashcards_container.addWidget(card, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.main_page.fade_out(self.saved_flashcards_page)
+
+    def show_saved_flashcards(self):
+        """Display user-saved flashcards as FlipCards."""
+        # Create the page if it doesn’t exist yet
+        if not hasattr(self, "saved_flashcards_page"):
+            self.setup_saved_flashcards_page()
+
+        # Clear previous cards (to refresh)
+        for i in reversed(range(self.saved_flashcards_container.count())):
+            widget_item = self.saved_flashcards_container.itemAt(i).widget()
+            if widget_item:
+                widget_item.setParent(None)
+
+        # Check if there are saved flashcards
+        if not hasattr(self.data, "custom_flashcards") or not self.data.custom_flashcards:
+            no_card_label = QLabel("No saved flashcards yet! Create some first. 📚")
+            no_card_label.setFont(QFont("Arial", 14))
+            no_card_label.setStyleSheet("color: #777;")
+            no_card_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.saved_flashcards_container.addWidget(no_card_label)
+        else:
+            # Create FlipCards for each saved flashcard
+            for q, a in self.data.custom_flashcards:
+                card = FlipCard(q, a, bg_color="#FFFFFF", text_color="#333")
+                self.saved_flashcards_container.addWidget(card, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.main_page.fade_out(self.saved_flashcards_page)
