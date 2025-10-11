@@ -1,7 +1,7 @@
 # main_app_flashcard.py
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QLabel, QVBoxLayout, QStackedWidget,
-    QLineEdit, QHBoxLayout, QFrame, QGraphicsOpacityEffect
+    QLineEdit, QHBoxLayout, QFrame, QGraphicsOpacityEffect, QMessageBox
 )
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QFont, QIcon, QPixmap
@@ -9,7 +9,8 @@ from data_model_flashcard import AppData
 from ui_styles_flashcard import (
     APP_STYLE, SIDEBAR_BUTTON_STYLE, HAMBURGER_STYLE,
     FONT_LARGE_BOLD, FONT_MEDIUM, FONT_BUTTON, FONT_LABEL,
-    FONT_SUBTITLE, APP_STYLE_DARK, APP_STYLE_LIGHT, CREATE_FLASH
+    FONT_SUBTITLE, APP_STYLE_DARK, APP_STYLE_LIGHT, CREATE_FLASH, 
+    MESSAGE_WARNING
 )
 
 class FadeWidget(QWidget):
@@ -280,7 +281,7 @@ class MainWindow(QWidget):
         self.welcome_back_page.widget.setText(f"Welcome back, {name}!")
         self.welcome_back_page.widget.setStyleSheet("color: #434190; font-weight: bold;")
         self.ask_page.fade_out(self.welcome_back_page)
-        QTimer.singleShot(2000, lambda: self.welcome_back_page.fade_out(self.main_page))
+        QTimer.singleShot(1500, lambda: self.welcome_back_page.fade_out(self.main_page))
 
     def create_main_page(self):
         page = QWidget()
@@ -347,12 +348,25 @@ class MainWindow(QWidget):
         print(" ")
 
     def show_greet(self):
-        name = self.name_input.text().strip() or "User"
+        name = self.name_input.text().strip()
+        
+        if not name:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("Missing Name")
+            msg.setFont(FONT_SUBTITLE)
+            msg.setWindowIcon(QIcon("Icon.png"))
+            msg.setText("Enter your name before continuing.")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.setStyleSheet(MESSAGE_WARNING)
+            msg.exec()
+            return
+    
         self.data.username = name
         self.greet_page.widget.setText(f"Hi, {name}!")
         self.greet_page.widget.setStyleSheet("color: #434190")
         self.name_page.fade_out(self.greet_page)
-        QTimer.singleShot(500, lambda: self.show_welcome())
+        QTimer.singleShot(1000, lambda: self.show_welcome())
 
     def create_welcome_page(self):
         widget = QWidget()
@@ -387,7 +401,7 @@ class MainWindow(QWidget):
     
     def show_welcome(self):
         self.greet_page.fade_out(self.welcome_page)
-        QTimer.singleShot(500, lambda: self.welcome_page.fade_out(self.ask_page))
+        QTimer.singleShot(1500, lambda: self.welcome_page.fade_out(self.ask_page))
 
     def toggle_sidebar(self):
         current_width = self.sidebar.maximumWidth()
