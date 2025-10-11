@@ -1,6 +1,6 @@
 # main_app_flashcard.py
 from PyQt6.QtWidgets import (
-    QWidget, QPushButton, QLabel, QVBoxLayout, QStackedWidget,
+    QWidget, QPushButton, QLabel, QVBoxLayout, QStackedWidget,QStackedLayout,
     QLineEdit, QHBoxLayout, QFrame, QGraphicsOpacityEffect, QMessageBox
 )
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
@@ -12,7 +12,49 @@ from ui_styles_flashcard import (
     FONT_SUBTITLE, APP_STYLE_DARK, APP_STYLE_LIGHT, CREATE_FLASH, 
     MESSAGE_WARNING
 )
+#-------BAGONG LAGAY TO------
+class FlipCard(QWidget):
+    """Simple, fully working flip card — front/back toggle with fade."""
+    def __init__(self, question, answer, bg_color="#FFFFFF", text_color="#333"):
+        super().__init__()
+        self.is_front = True
 
+        # Create the front and back labels
+        self.front = QLabel(question)
+        self.back = QLabel(answer)
+
+        for lbl in (self.front, self.back):
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setWordWrap(True)
+            lbl.setFont(QFont("Arial Rounded MT Bold", 14))
+            lbl.setFixedSize(300, 180)
+            lbl.setStyleSheet(f"""
+                background-color: {bg_color};
+                color: {text_color};
+                border-radius: 20px;
+                padding: 20px;
+                border: 3px solid #aaa;
+            """)
+
+        # Stack both sides
+        self.stack = QStackedLayout(self)
+        self.stack.addWidget(self.front)
+        self.stack.addWidget(self.back)
+        self.stack.setCurrentWidget(self.front)
+
+        # Connect click events
+        self.front.mousePressEvent = self.flip
+        self.back.mousePressEvent = self.flip
+
+    def flip(self, event):
+        """Instant flip (no fade) — guaranteed to show other side."""
+        if self.is_front:
+            self.stack.setCurrentWidget(self.back)
+        else:
+            self.stack.setCurrentWidget(self.front)
+        self.is_front = not self.is_front
+
+              
 class FadeWidget(QWidget):
     def __init__(self, widget, parent_window):
         super().__init__()
@@ -102,7 +144,11 @@ class MainWindow(QWidget):
 
         # Apply default theme
         self.apply_theme()
-    
+        
+        # Topic pages
+        
+        #self.setup_topic_pages()
+
         
     def toggle_btn(self):
         self.data.theme = "dark" if self.data.theme == "light" else "light"
@@ -293,15 +339,14 @@ class MainWindow(QWidget):
         self.sidebar.setStyleSheet("background-color: #2d3436; color: white;")
         side_layout = QVBoxLayout(self.sidebar)
         side_layout.setContentsMargins(10, 20, 10, 10)
-        
+
         for text in ["Home", "Profile", "Settings", "Statistics"]:
             btn = QPushButton(text)
             btn.setStyleSheet(SIDEBAR_BUTTON_STYLE)
             btn.clicked.connect(lambda _, t=text: self.show_page(t))
             side_layout.addWidget(btn)
             side_layout.addStretch()
-            
-            
+        
         pixmap = QPixmap("Remora-Main.png")
         pixmap = pixmap.scaled(800, 800, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         
@@ -314,6 +359,8 @@ class MainWindow(QWidget):
         self.existing_flashcard.setFont(FONT_LARGE_BOLD)
         self.existing_flashcard.setStyleSheet(CREATE_FLASH)
         self.existing_flashcard.clicked.connect(self.toggle_existing_flashcard)
+        
+    
         
             
         self.create_flashcard = QPushButton("Create Flashcard")
@@ -344,8 +391,6 @@ class MainWindow(QWidget):
     def toggle_create_flashcard(self):
         print(" ")
         
-    def toggle_existing_flashcard(self):
-        print(" ")
 
     def show_greet(self):
         name = self.name_input.text().strip()
@@ -416,3 +461,215 @@ class MainWindow(QWidget):
 
     def show_page(self, text):
         self.main_content.setText(f"You selected: {text}")
+        
+        
+        #-------BAGONG LAGAY TO------
+    def create_existing_flashcard(self):
+        """Create the page shown when 'Existing Flashcard' is clicked."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        title = QLabel("Choose Topics")
+        title.setFont(FONT_LARGE_BOLD)
+        title.setStyleSheet("color: #434190; font-weight: bold;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+     
+    
+
+        back_btn = QPushButton("⬅ Back to Main")
+        back_btn.setFont(FONT_BUTTON)
+        back_btn.clicked.connect(lambda: self.existing_flashcard_page.fade_out(self.main_page))
+     
+        layout.addStretch()
+        layout.addWidget(title)
+        layout.addSpacing(10)
+        layout.addWidget(back_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addStretch()
+     
+        return widget
+
+    def setup_existing_flashcard_page(self):
+         """Setup and add the existing flashcard page to stacked widget."""
+         self.existing_flashcard_page = FadeWidget(self.create_existing_flashcard(), self)
+         self.stacked.addWidget(self.existing_flashcard_page)
+     
+    def toggle_existing_flashcard(self):
+        """Show the topics page when 'Existing Flashcards' is clicked."""
+        if not hasattr(self, "topics_page"):
+            self.setup_topics_page()
+        self.main_page.fade_out(self.topics_page)
+                
+        # ========== INDIVIDUAL TOPIC PAGES ==========
+    def create_topic_page(self, topic_name, bg_color, text_color):
+        """Create a topic page with flipping flashcards."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(25)
+
+        title = QLabel(f"{topic_name} Flashcards")
+        title.setFont(QFont("Arial Rounded MT Bold", 26))
+        title.setStyleSheet(f"color: {text_color};")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # QUESTIONS EXISTING
+        qa_sets = {
+            "English": [
+                ("What is haha?", "haha is a tawa"),
+                ("what is huhu?", "huhu is a iyak")
+            ],
+            "Math": [
+                ("1+1", "2"),
+                ("2+2", "4")
+            ],
+            "Science": [
+                ("Who discovered gravity?", "Isaac Newton"),
+            ],
+            "History": [
+                ("Who killed Magellan?", "Lapu-Lapu"),
+                ("Where is Rizal’s head?", "On the one-peso coin")
+            ],
+        }
+
+        flashcards_layout = QHBoxLayout()
+        flashcards_layout.setSpacing(30)
+
+        for q, a in qa_sets.get(topic_name, []):
+            card = FlipCard(q, a, bg_color="#FFFFFF", text_color=text_color)
+            flashcards_layout.addWidget(card, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        back_btn = QPushButton("⬅ Back to Topics")
+        back_btn.setFont(QFont("Arial", 14))
+        back_btn.setFixedWidth(200)
+        back_btn.clicked.connect(lambda: self.topic_pages[topic_name].fade_out(self.topics_page))
+
+        layout.addWidget(title)
+        layout.addLayout(flashcards_layout)
+        layout.addSpacing(40)
+        layout.addWidget(back_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        widget.setStyleSheet(f"background-color: {bg_color};")
+        return widget
+
+    #-------BAGONG LAGAY TO------
+    def create_topics_page(self):
+        """Create a stylized topic selection page matching the uploaded design."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setSpacing(20)
+        layout.setContentsMargins(30, 30, 30, 30)
+
+        # Header Title
+        title = QLabel("TOPICS")
+        title.setFont(QFont("Arial Rounded MT Bold", 36, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("""
+            background-color: #F08080;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            letter-spacing: 2px;
+        """)
+        layout.addWidget(title)
+        layout.addSpacing(20)
+
+        # === Custom function to create each topic row ===
+        def make_topic(icon_path, text, bg_color, text_color):
+            container = QFrame()
+            container.setStyleSheet(f"""
+                QFrame {{
+                    background-color: {bg_color};
+                    border-radius: 35px;
+                }}
+            """)
+            container.setFixedHeight(80)
+
+            icon_label = QLabel()
+            icon_label.setPixmap(QPixmap(icon_path).scaled(40, 40, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            icon_label.setFixedSize(60, 60)
+            icon_label.setStyleSheet("background-color: white; border-radius: 30px;")
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            text_label = QLabel(text)
+            text_label.setFont(QFont("Arial Rounded MT Bold", 20))
+            text_label.setStyleSheet(f"color: {text_color};")
+            text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+
+            row = QHBoxLayout()
+            row.setContentsMargins(20, 0, 20, 0)
+            row.setSpacing(20)
+            row.addWidget(icon_label)
+            row.addWidget(text_label)
+            row.addStretch()
+
+            container.setLayout(row)
+            container.mousePressEvent = lambda event: self.show_topic_page(text)
+
+            return container
+
+        # Topic Buttons (icon path, label, background color, text color)
+        topics = [
+            ("book.png", "English", "#ADD8FF", "#3A4CC0"),
+            ("math.png", "Math", "#A5E6A0", "#2E4B2E"),
+            ("science.png", "Science", "#FFE8A0", "#D98C00"),
+            ("history.png", "History", "#FFB0A0", "#7B2D2D"),
+    ]
+
+        # Add topic buttons
+        for icon, text, bg_color, text_color in topics:
+            layout.addWidget(make_topic(icon, text, bg_color, text_color))
+
+    # Back Button
+        back_btn = QPushButton("⬅ Back to Main")
+        back_btn.setFont(QFont("Arial", 14))
+        back_btn.setFixedWidth(200)
+        back_btn.clicked.connect(lambda: self.topics_page.fade_out(self.main_page))
+        layout.addSpacing(30)
+        layout.addWidget(back_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Background of entire page
+        widget.setStyleSheet("background-color: #FFF6E9;")
+
+        return widget
+
+    #-------BAGONG LAGAY TO------
+    def setup_topics_page(self):
+        """Initialize the topics page."""
+        self.topics_page = FadeWidget(self.create_topics_page(), self)
+        self.stacked.addWidget(self.topics_page)
+
+    def toggle_existing_flashcard(self):
+        """Show the topics page when 'Existing Flashcards' is clicked."""
+        if not hasattr(self, "topics_page"):
+            self.setup_topics_page()
+        self.main_page.fade_out(self.topics_page)
+
+    def show_topic_page(self, topic_name):
+        """Display the selected topic’s flashcard page."""
+        if not hasattr(self, "topic_pages"):
+            self.topic_pages = {}
+
+        if topic_name not in self.topic_pages:
+            bg_colors = {
+                "English": "#D8E6FF",
+                "Math": "#C9F7C5",
+                "Science": "#FFF6BF",
+                "History": "#FFD5CC",
+            }
+            text_colors = {
+                "English": "#1A237E",
+                "Math": "#1B5E20",
+                "Science": "#BF360C",
+                "History": "#4E342E",
+            }
+            page = FadeWidget(
+                self.create_topic_page(topic_name, bg_colors[topic_name], text_colors[topic_name]),
+                self
+            )
+            self.topic_pages[topic_name] = page
+            self.stacked.addWidget(page)
+
+        self.topics_page.fade_out(self.topic_pages[topic_name])
+    
