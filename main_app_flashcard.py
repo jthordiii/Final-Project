@@ -9,7 +9,7 @@ from data_model_flashcard import AppData
 from ui_styles_flashcard import (
     APP_STYLE, SIDEBAR_BUTTON_STYLE, HAMBURGER_STYLE,
     FONT_LARGE_BOLD, FONT_MEDIUM, FONT_BUTTON, FONT_LABEL,
-    FONT_SUBTITLE, APP_STYLE_DARK, APP_STYLE_LIGHT
+    FONT_SUBTITLE, APP_STYLE_DARK, APP_STYLE_LIGHT, CREATE_FLASH
 )
 
 class FadeWidget(QWidget):
@@ -27,14 +27,14 @@ class FadeWidget(QWidget):
 
     def fade_in(self):
         self.anim = QPropertyAnimation(self.effect, b"opacity")
-        self.anim.setDuration(700)
+        self.anim.setDuration(500)
         self.anim.setStartValue(0)
         self.anim.setEndValue(1)
         self.anim.start()
 
     def fade_out(self, next_widget):
         self.anim = QPropertyAnimation(self.effect, b"opacity")
-        self.anim.setDuration(700)
+        self.anim.setDuration(500)
         self.anim.setStartValue(1)
         self.anim.setEndValue(0)
         self.anim.finished.connect(lambda: self.switch_page(next_widget))
@@ -160,6 +160,7 @@ class MainWindow(QWidget):
         
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Type it here...")
+        
         self.name_input.repaint()
         self.name_input.setFont(FONT_SUBTITLE)
         
@@ -300,10 +301,24 @@ class MainWindow(QWidget):
             side_layout.addStretch()
             
             
-
-        self.main_content = QLabel("Main Content Area")
-        self.main_content.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_content.setStyleSheet("font-size:26px; color:#FC483D;")
+        pixmap = QPixmap("Remora-Main.png")
+        pixmap = pixmap.scaled(800, 800, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        
+        logo = QLabel()
+        logo.setPixmap(pixmap)
+        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        
+        self.existing_flashcard = QPushButton("Existing Flashcards")
+        self.existing_flashcard.setFont(FONT_LARGE_BOLD)
+        self.existing_flashcard.setStyleSheet(CREATE_FLASH)
+        self.existing_flashcard.clicked.connect(self.toggle_existing_flashcard)
+        
+            
+        self.create_flashcard = QPushButton("Create Flashcard")
+        self.create_flashcard.setFont(FONT_LARGE_BOLD)
+        self.create_flashcard.setStyleSheet(CREATE_FLASH)
+        self.create_flashcard.clicked.connect(self.toggle_create_flashcard)
 
         self.hamburger = QPushButton("☰")
         self.hamburger.setStyleSheet(HAMBURGER_STYLE)
@@ -315,11 +330,21 @@ class MainWindow(QWidget):
 
         content_layout = QVBoxLayout()
         content_layout.addLayout(top)
-        content_layout.addWidget(self.main_content)
+        content_layout.addWidget(logo, alignment=Qt.AlignmentFlag.AlignCenter)
+        content_layout.addWidget(self.existing_flashcard, alignment=Qt.AlignmentFlag.AlignCenter)
+        content_layout.addWidget(self.create_flashcard, alignment=Qt.AlignmentFlag.AlignCenter)
+        content_layout.addStretch()
 
         layout.addWidget(self.sidebar)
         layout.addLayout(content_layout)
+        
         return page
+    
+    def toggle_create_flashcard(self):
+        print(" ")
+        
+    def toggle_existing_flashcard(self):
+        print(" ")
 
     def show_greet(self):
         name = self.name_input.text().strip() or "User"
@@ -327,7 +352,7 @@ class MainWindow(QWidget):
         self.greet_page.widget.setText(f"Hi, {name}!")
         self.greet_page.widget.setStyleSheet("color: #434190")
         self.name_page.fade_out(self.greet_page)
-        QTimer.singleShot(2000, lambda: self.show_welcome())
+        QTimer.singleShot(500, lambda: self.show_welcome())
 
     def create_welcome_page(self):
         widget = QWidget()
@@ -362,7 +387,7 @@ class MainWindow(QWidget):
     
     def show_welcome(self):
         self.greet_page.fade_out(self.welcome_page)
-        QTimer.singleShot(2000, lambda: self.welcome_page.fade_out(self.ask_page))
+        QTimer.singleShot(500, lambda: self.welcome_page.fade_out(self.ask_page))
 
     def toggle_sidebar(self):
         current_width = self.sidebar.maximumWidth()
