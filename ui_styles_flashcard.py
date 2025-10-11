@@ -36,7 +36,7 @@ QPushButton {
     border:none;
 }
 QPushButton:hover {
-    background-color: #636e72;
+    background-color: #434190;
 }
 """
 
@@ -49,7 +49,7 @@ QPushButton {
     padding:10px;
 }
 QPushButton:hover {
-    color:#0984e3;
+    color:#434190;
 }
 """
 
@@ -86,6 +86,44 @@ QPushButton:hover {
     background-color: #505050;
 }
 """
+
+CREATE_FLASH = """
+QWidget {
+    background-color: #FC483D;
+}
+QPushButton {
+    background-color: #FC483D;
+    color: #FFF5E5;
+    font-size: 33px;
+    font-weight: 900;
+    border-radius: 30px;
+    padding: 14px 40px;
+}
+QPushButton:hover {
+    background-color: #434190;
+}
+"""
+
+MESSAGE_WARNING = """
+QMessageBox {
+    background-color: #FFF5E5;
+    font-size: 16px;
+}
+QLabel {
+    color: #FC483D
+}
+QPushButton {
+    background-color: #FC483D;
+    color: #FFF5E5;
+    padding: 6px 18px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #434190;
+}
+"""
+
 
 FONT_SUBTITLE = QFont("Rubik Mono", 16, QFont.Weight.Bold)
 FONT_LARGE_BOLD = QFont("Rubik Mono", 28, QFont.Weight.Bold)
