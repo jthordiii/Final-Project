@@ -88,9 +88,11 @@ class FadeWidget(QWidget):
         self.parent_window.stacked.setCurrentWidget(next_widget)
 
 class MainWindow(QWidget):
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
         self.data = AppData()
+        self.app = app
+        self.apply_theme()
         
         self.setWindowTitle("Remora App Flow")
         self.setStyleSheet(APP_STYLE)
@@ -148,23 +150,38 @@ class MainWindow(QWidget):
         # Topic pages
         
         #self.setup_topic_pages()
+        
+    
 
         
     def toggle_btn(self):
+        """Switch between light and dark themes."""
         self.data.theme = "dark" if self.data.theme == "light" else "light"
         self.apply_theme()
-        
-        if self.data.theme == "dark":
-            self.theme_btn.setText("☀️")
-        else:
-            self.theme_btn.setText("🌙")
-        
-        
+        self.theme_btn.setText("☀️" if self.data.theme == "dark" else "🌙")
+
     def apply_theme(self):
         if self.data.theme == "dark":
             self.setStyleSheet(APP_STYLE_DARK)
         else:
             self.setStyleSheet(APP_STYLE_LIGHT)
+            
+        for page_name in [
+            "main_page", "topics_page", "create_flashcard_page",
+            "saved_flashcards_page", "existing_flashcard_page"
+        ]:
+            if hasattr(self, page_name):
+                getattr(self, page_name).setStyleSheet(
+                    APP_STYLE_DARK if self.data.theme == "dark" else APP_STYLE_LIGHT
+                )
+            
+    def toggle_theme(self):
+        if self.data.theme == "light":
+            self.data.theme = "dark"
+        else:
+            self.data.theme = "light"
+    
+        self.apply_theme()
 
     def create_start_page(self):
         widget = QWidget()
@@ -340,10 +357,15 @@ class MainWindow(QWidget):
         side_layout = QVBoxLayout(self.sidebar)
         side_layout.setContentsMargins(10, 20, 10, 10)
     
-        for text in ["Home", "Profile", "Settings", "Statistics"]:
+        for text in ["Home", "Profile", "Settings", "Statistics", "Saved Flashcards"]:
             btn = QPushButton(text)
             btn.setStyleSheet(SIDEBAR_BUTTON_STYLE)
-            btn.clicked.connect(lambda _, t=text: self.show_page(t))
+    
+            if text == "Saved Flashcards":
+                btn.clicked.connect(self.show_saved_flashcards)
+            else:
+                btn.clicked.connect(lambda _, t=text: self.show_page(t))
+                
             side_layout.addWidget(btn)
     
         side_layout.addStretch()
@@ -383,21 +405,22 @@ class MainWindow(QWidget):
         content_layout.addLayout(top)
         content_layout.addWidget(logo, alignment=Qt.AlignmentFlag.AlignCenter)
     
-        # A central content label — used by show_page() to display quick messages
+        '''
         self.main_content = QLabel("Welcome to Remora")
         self.main_content.setFont(FONT_LABEL)
         self.main_content.setAlignment(Qt.AlignmentFlag.AlignCenter)
         content_layout.addWidget(self.main_content, alignment=Qt.AlignmentFlag.AlignCenter)
         content_layout.addSpacing(8)
+        '''
     
         # Buttons area
-        btns_row = QHBoxLayout()
-        btns_row.setSpacing(12)
-        btns_row.addStretch()
+        btns_row = QVBoxLayout()
+        btns_row.setSpacing(30)
+        btns_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
         btns_row.addWidget(self.existing_flashcard)
+        btns_row.addSpacing(40)
         btns_row.addWidget(self.create_flashcard)
-        btns_row.addWidget(self.saved_flashcard_btn)
-        btns_row.addStretch()
     
         content_layout.addLayout(btns_row)
         content_layout.addStretch()
@@ -512,6 +535,7 @@ class MainWindow(QWidget):
          """Setup and add the existing flashcard page to stacked widget."""
          self.existing_flashcard_page = FadeWidget(self.create_existing_flashcard(), self)
          self.stacked.addWidget(self.existing_flashcard_page)
+         self.apply_theme()
      
     def toggle_existing_flashcard(self):
         """Show the topics page when 'Existing Flashcards' is clicked."""
@@ -659,6 +683,7 @@ class MainWindow(QWidget):
         """Initialize the topics page."""
         self.topics_page = FadeWidget(self.create_topics_page(), self)
         self.stacked.addWidget(self.topics_page)
+        self.apply_theme()
 
     def toggle_existing_flashcard(self):
         """Show the topics page when 'Existing Flashcards' is clicked."""
@@ -700,6 +725,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout(widget)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(15)
+        self.apply_theme()
 
         title = QLabel("Create Flashcard")
         title.setFont(QFont("Arial Rounded MT Bold", 28))
@@ -831,6 +857,7 @@ class MainWindow(QWidget):
         """Initialize the saved flashcards review page."""
         self.saved_flashcards_page = FadeWidget(self.create_saved_flashcards_page(), self)
         self.stacked.addWidget(self.saved_flashcards_page)
+        self.apply_theme()
 
 
     def show_saved_flashcards(self):
