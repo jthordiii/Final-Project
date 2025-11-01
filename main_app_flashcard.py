@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QFont, QIcon, QPixmap
+from PyQt6.QtGui import QKeySequence, QShortcut #axl
 from data_model_flashcard import AppData
 from ui_styles_flashcard import (
     APP_STYLE, SIDEBAR_BUTTON_STYLE, HAMBURGER_STYLE,
@@ -150,8 +151,37 @@ class MainWindow(QWidget):
         # Topic pages
         
         #self.setup_topic_pages()
+
+    # --- Global Shortcuts --- kay axl
+        shortcut_quit = QShortcut(QKeySequence("Ctrl+Q"), self)
+        shortcut_quit.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        shortcut_quit.activated.connect(self.quit_app)
+
+        shortcut_save = QShortcut(QKeySequence("Ctrl+S"), self)
+        shortcut_save.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        shortcut_save.activated.connect(self.save_data)
+
+        shortcut_flash = QShortcut(QKeySequence("Ctrl+F"), self)
+        shortcut_flash.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        shortcut_flash.activated.connect(self.open_flashcard)
+
+        shortcut_space = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
+        shortcut_space.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        shortcut_space.activated.connect(self.check_back_flashcard)
         
     
+
+    def quit_app(self):
+        QApplication.quit()
+
+    def save_data(self):
+        QMessageBox.information(self, "Save", "Ctrl+S pressed — Saving data...")
+
+    def open_flashcard(self):
+        QMessageBox.information(self, "Flashcard", "Ctrl+F pressed — Opening flashcard...")
+
+    def check_back_flashcard(self):
+        QMessageBox.information(self, "Flashcard", "Spacebar pressed — Checking back flashcard...")
 
         
     def toggle_btn(self):
