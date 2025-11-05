@@ -797,10 +797,21 @@ class MainWindow(QWidget):
         widget.setStyleSheet("background-color: #FFF6E9;")
         return widget
     
-    def setup_create_flashcard_page(self):
-        """Initialize and add the Create Flashcard page to stacked widget."""
-        self.create_flashcard_page = FadeWidget(self.create_create_flashcard_page(), self)
-        self.stacked.addWidget(self.create_flashcard_page)
+   def setup_create_flashcard_page(self): #axl
+    """Initialize and add the Create Flashcard page to stacked widget."""
+    self.create_flashcard_page = FadeWidget(self.create_create_flashcard_page(), self)
+    self.stacked.addWidget(self.create_flashcard_page)
+
+    # 🔹 Add Ctrl+Enter shortcut to save flashcard
+    shortcut_save_flash = QShortcut(QKeySequence("Ctrl+Return"), self)
+    shortcut_save_flash.setContext(Qt.ShortcutContext.ApplicationShortcut)
+    shortcut_save_flash.activated.connect(self.save_flashcard)
+
+    # Optional: also allow Ctrl+S to save
+    shortcut_ctrl_s = QShortcut(QKeySequence("Ctrl+S"), self)
+    shortcut_ctrl_s.setContext(Qt.ShortcutContext.ApplicationShortcut)
+    shortcut_ctrl_s.activated.connect(self.save_flashcard)
+
 
     def toggle_create_flashcard(self):
         """Show the Create Flashcard page when button is clicked."""
