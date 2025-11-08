@@ -168,9 +168,15 @@ class MainWindow(QWidget):
         shortcut_space = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
         shortcut_space.setContext(Qt.ShortcutContext.ApplicationShortcut)
         shortcut_space.activated.connect(self.check_back_flashcard)
-        
-    
 
+        # Help page shortcut
+        shortcut_help = QShortcut(QKeySequence("F1"), self)
+        shortcut_help.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        shortcut_help.activated.connect(self.show_help_page)
+       
+        shortcut_ctrl_tab = QShortcut(QKeySequence("Ctrl+Tab"), self)
+        shortcut_ctrl_tab.activated.connect(self.switch_tab)
+    
     def quit_app(self):
         QApplication.quit()
 
@@ -807,11 +813,7 @@ class MainWindow(QWidget):
     shortcut_save_flash.setContext(Qt.ShortcutContext.ApplicationShortcut)
     shortcut_save_flash.activated.connect(self.save_flashcard)
 
-    # Optional: also allow Ctrl+S to save
-    shortcut_ctrl_s = QShortcut(QKeySequence("Ctrl+S"), self)
-    shortcut_ctrl_s.setContext(Qt.ShortcutContext.ApplicationShortcut)
-    shortcut_ctrl_s.activated.connect(self.save_flashcard)
-
+   
 
     def toggle_create_flashcard(self):
         """Show the Create Flashcard page when button is clicked."""
@@ -960,3 +962,75 @@ class MainWindow(QWidget):
                 self.saved_flashcards_container.addWidget(card, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.main_page.fade_out(self.saved_flashcards_page)
+
+    def create_help_page(self):
+        """Help page: navigation, shortcuts, and flashcard tips."""
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setContentsMargins(40, 30, 40, 30)
+
+    def add_section(title, content, emoji=""):
+            lbl_title = QLabel(f"{emoji} {title}")
+            lbl_title.setFont(QFont("Arial Rounded MT Bold", 22))
+            lbl_title.setStyleSheet("color:#333;")
+            lbl_text = QLabel(content)
+            lbl_text.setFont(QFont("Arial", 14))
+            lbl_text.setStyleSheet("color:#555;")
+            lbl_text.setWordWrap(True)
+            layout.addWidget(lbl_title)
+            layout.addWidget(lbl_text)
+            layout.addSpacing(10)
+
+        # Header
+        header = QLabel("HELP & GUIDE")
+        header.setFont(QFont("Arial Rounded MT Bold", 32))
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header.setStyleSheet("background:#6C63FF;color:white;padding:12px;border-radius:12px;")
+        layout.addWidget(header)
+
+        # Sections
+        add_section("Navigation",
+            "• Use ☰ to open sidebar\n"
+            "• Access Home, Profile, Settings, or Statistics\n"
+            "• 'Create Flashcard' = make new\n"
+            "• 'Existing Flashcards' = browse topics\n"
+            "• 'Saved Flashcards' = view your saved ones", "🧭")
+
+        add_section("Shortcut Keys",
+            "• Ctrl + Q – Quit app\n"
+            "• Ctrl + S – Save data or flashcard\n"
+            "• Ctrl + F – Open flashcard view\n"
+            "• Ctrl + Enter – Save new flashcard\n"
+            "• Spacebar – Flip/check flashcard\n"
+            "• F1 – Open this Help page", "⌨️")
+
+        add_section("Tips for Great Flashcards",
+            "• Keep questions short\n"
+            "• One idea per card\n"
+            "• Use hints or keywords\n"
+            "• Be clear and specific\n"
+            "• Review often\n"
+            "• Add emojis or color 🎨", "💡")
+
+        # Back button
+        back_btn = QPushButton("⬅ Back to Main")
+        back_btn.setFont(QFont("Arial Rounded MT Bold", 14))
+        back_btn.setStyleSheet("background:#888;color:white;padding:8px 20px;border-radius:8px;")
+        back_btn.clicked.connect(lambda: self.help_page.fade_out(self.main_page))
+        layout.addWidget(back_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        page.setStyleSheet("background:#FFF6E9;")
+        return page
+
+ def setup_help_page(self):
+        """Initialize the help page and add to stacked widget."""
+        self.help_page = FadeWidget(self.create_help_page(), self)
+        self.stacked.addWidget(self.help_page)
+        self.apply_theme()
+
+ def show_help_page(self):
+        """Show the help page when F1 is pressed."""
+        if not hasattr(self, "help_page"):
+            self.setup_help_page()
+        self.main_page.fade_out(self.help_page)
+   
